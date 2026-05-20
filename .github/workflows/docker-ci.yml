@@ -19,8 +19,13 @@ jobs:
           java-version: "21"
           distribution: "temurin"
 
+      - name: Give execute permission to mvnw
+        run: chmod +x mvnw
+        working-directory: ./backend
+
       - name: Build JAR
-        run: mvn clean package
+        run: ./mvnw clean package
+        working-directory: ./backend
 
       - name: Login to Docker Hub
         uses: docker/login-action@v3
@@ -36,6 +41,7 @@ jobs:
           docker build \
           -t ${{ secrets.DOCKER_USERNAME }}/docker-ci-demo:latest \
           -t ${{ secrets.DOCKER_USERNAME }}/docker-ci-demo:${{ env.IMAGE_TAG }} .
+        working-directory: ./backend
 
       - name: Push Docker Images
         run: |
