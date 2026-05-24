@@ -40,8 +40,8 @@ jobs:
         run: |
           docker build \
           -t ${{ secrets.DOCKER_USERNAME }}/docker-ci-demo:latest \
-          -t ${{ secrets.DOCKER_USERNAME }}/docker-ci-demo:${{ env.IMAGE_TAG }} .
-        working-directory: ./backend
+          -t ${{ secrets.DOCKER_USERNAME }}/docker-ci-demo:${{ env.IMAGE_TAG }} \
+          ./backend
 
       - name: Push Docker Images
         run: |
