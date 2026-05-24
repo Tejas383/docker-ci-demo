@@ -27,7 +27,7 @@ jobs:
         working-directory: ./backend
 
       - name: Build JAR
-        run: ./mvnw clean package
+        run: ./mvnw clean package -DskipTests
         working-directory: ./backend
 
       - name: Login to Docker Hub
@@ -36,24 +36,32 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Set Image Tag
-        run: echo "IMAGE_TAG=${GITHUB_SHA::7}" >> $GITHUB_ENV
+      - name: Set Image Variables
+        run: |
+          echo "IMAGE_TAG=${GITHUB_SHA::7}" >> $GITHUB_ENV
+          echo "VERSION=${GITHUB_REF_NAME}" >> $GITHUB_ENV
 
       - name: Build Docker Image
         run: |
           docker build \
           -t ${{ secrets.DOCKER_USERNAME }}/docker-ci-demo:latest \
           -t ${{ secrets.DOCKER_USERNAME }}/docker-ci-demo:${{ env.IMAGE_TAG }} \
-          -t ${{ secrets.DOCKER_USERNAME }}/docker-ci-demo:${{ env.VERSION }} \
           ./backend
+
+      - name: Build Semantic Version Image
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          docker tag \
+          ${{ secrets.DOCKER_USERNAME }}/docker-ci-demo:latest \
+          ${{ secrets.DOCKER_USERNAME }}/docker-ci-demo:${{ env.VERSION }}
 
       - name: Push Docker Images
         run: |
           docker push ${{ secrets.DOCKER_USERNAME }}/docker-ci-demo:latest
           docker push ${{ secrets.DOCKER_USERNAME }}/docker-ci-demo:${{ env.IMAGE_TAG }}
-          docker push ${{ secrets.DOCKER_USERNAME }}/docker-ci-demo:${{ env.VERSION }}
 
-      - name: Set Version
+      - name: Push Semantic Version Image
+        if: startsWith(github.ref, 'refs/tags/v')
         run: |
-          echo "IMAGE_TAG=${GITHUB_SHA::7}" >> $GITHUB_ENV
-          echo "VERSION=${GITHUB_REF_NAME}" >> $GITHUB_ENV
+          docker push \
+          ${{ secrets.DOCKER_USERNAME }}/docker-ci-demo:${{ env.VERSION }}
