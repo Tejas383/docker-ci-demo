@@ -6,7 +6,7 @@ function Dashboard() {
   const [backendMessage, setBackendMessage] = useState("Loading...");
 
   useEffect(() => {
-    fetch("http://localhost:8080/hello")
+    fetch("http://backend:8080/hello")
       .then((res) => res.text())
       .then((data) => {
         setBackendMessage(data);
