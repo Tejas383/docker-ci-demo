@@ -5,9 +5,6 @@ on:
     branches:
       - main
 
-    tags:
-      - "v*"
-
 jobs:
   docker:
     runs-on: ubuntu-latest
@@ -36,8 +33,30 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Build Docker Image
+      - name: Set Image Variables
         run: |
+          MAJOR=1
+          MINOR=0
+          PATCH=${GITHUB_RUN_NUMBER}
+
+          VERSION="v${MAJOR}.${MINOR}.${PATCH}"
+          IMAGE_TAG="${GITHUB_SHA::7}"
+
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV
+
+      - name: Debug Variables
+        run: |
+          echo "VERSION=$VERSION"
+          echo "IMAGE_TAG=$IMAGE_TAG"
+
+      - name: Build Docker Image
+        env:
+          VERSION: ${{ env.VERSION }}
+          IMAGE_TAG: ${{ env.IMAGE_TAG }}
+        run: |
+          echo "Building version: $VERSION"
+
           docker build \
           -t ${{ secrets.DOCKER_USERNAME }}/docker-ci-demo:latest \
           -t ${{ secrets.DOCKER_USERNAME }}/docker-ci-demo:$IMAGE_TAG \
@@ -45,21 +64,10 @@ jobs:
           ./backend
 
       - name: Push Docker Images
+        env:
+          VERSION: ${{ env.VERSION }}
+          IMAGE_TAG: ${{ env.IMAGE_TAG }}
         run: |
           docker push ${{ secrets.DOCKER_USERNAME }}/docker-ci-demo:latest
           docker push ${{ secrets.DOCKER_USERNAME }}/docker-ci-demo:$IMAGE_TAG
           docker push ${{ secrets.DOCKER_USERNAME }}/docker-ci-demo:$VERSION
-
-      - name: Set Image Variables
-        run: |
-          MAJOR=1
-          MINOR=0
-          PATCH=${GITHUB_RUN_NUMBER}
-
-          echo "VERSION=v${MAJOR}.${MINOR}.${PATCH}" >> $GITHUB_ENV
-          echo "IMAGE_TAG=${GITHUB_SHA::7}" >> $GITHUB_ENV
-
-      - name: Debug Variables
-        run: |
-          echo "VERSION=$VERSION"
-          echo "IMAGE_TAG=$IMAGE_TAG"
